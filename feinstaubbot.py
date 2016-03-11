@@ -77,14 +77,14 @@ def twitterValue( name, value ):
 
     twitter = Twython(config.APP_KEY, config.APP_SECRET, config.OAUTH_TOKEN, config.OAUTH_TOKEN_SECRET)
 
-    twitter.update_status(status="Feinstaubalarm in München! Der PM10 Wert bei Meßstation " + name + " liegt bei: " + value + "ug/m^3")
+    twitter.update_status(status="Feinstaubalarm in München! Der PM10 Wert bei Mssstation " + name + " liegt bei: " + value + "ug/m^3")
     
     
     return
     
 def saveData(values, timeStamp):
     "Sends values to Thingspeak"
-    params = urllib.urlencode({'field1': values[1], 'field2': values[2], 'field3': values[3],'field4':values[0], 'key':THINGSPEAKKEY, 'created_at': timeStamp})
+    params = urllib.urlencode({'field1': values[1], 'field2': values[2], 'field3': values[3],'field4':values[0], 'key':config.THINGSPEAKKEY, 'created_at': timeStamp})
     headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
     conn = httplib.HTTPConnection("api.thingspeak.com:80")
     try:
