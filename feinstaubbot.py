@@ -4,6 +4,8 @@ import urllib2
 import csv
 import config
 from twython import Twython
+import httplib, urllib
+import datetime as DT
 
 # http://www.lfu.bayern.de/luft/lueb/index.htm
 
@@ -51,35 +53,23 @@ def fetchData( cvsFiles ):
     
     for cvsFile in cvsFiles:
         url = csvUrlPrefix + cvsFile['filename']
+        print url
         
         if (DEBUG):
             print "Fetching URL " + url
         response = urllib2.urlopen(url)
-        data = response.read()
+        data = response
         
-        dataMap[cvsFile['name']] = data
-        
+        dataMap[cvsFile['name']] = data   
     return dataMap
 
 def getLatestData( csvData ):
     "gets latest data of csv"
     
-    latestValue = -1
-    
     # Workaround! Find a better way to get the latest value of this CSV
-    for row in csv.reader(csvData, delimiter=';'):
-        #print type(row)
-        if (len(row) == 1):
-            latestValue = row[0]
-        #latestValue = ', '.join(row)
+    for row in csv.reader(csvData, delimiter=";", lineterminator="\n"):
+        latestValue = row
 
-    
-    #allvalues = csv.reader(csvData, delimiter=';')
-    
-    #print len(allvalues)
-    
-    #print allvalues[1]
-    
     return latestValue
     
 def twitterValue( name, value ):
@@ -87,11 +77,34 @@ def twitterValue( name, value ):
 
     twitter = Twython(config.APP_KEY, config.APP_SECRET, config.OAUTH_TOKEN, config.OAUTH_TOKEN_SECRET)
 
-    twitter.update_status(status="Feinstaub in München" + name + ": " + value)
+    twitter.update_status(status="Feinstaubalarm in München! Der PM10 Wert bei Meßstation " + name + " liegt bei: " + value + "ug/m^3")
     
     
     return
     
+def saveData(values, timeStamp):
+    "Sends values to Thingspeak"
+    params = urllib.urlencode({'field1': values[1], 'field2': values[2], 'field3': values[3],'field4':values[0], 'key':THINGSPEAKKEY, 'created_at': timeStamp})
+    headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
+    conn = httplib.HTTPConnection("api.thingspeak.com:80")
+    try:
+	    conn.request("POST", "/update", params, headers)
+	    response = conn.getresponse()
+	    print response.status, response.reason
+	    data = response.read()
+	    conn.close()
+    except:
+        print "connection failed"
+
+    return
+    
+
+def makeThingSpeakTimestamp(day,time):
+    thetime = day + ' ' + time
+    finaltime = DT.datetime.strptime(thetime, "%d.%m.%Y %H:%M").strftime("%Y-%m-%dT%H:%M:%S%z")
+    finaltime = finaltime + 'GMT+0100'
+    print(finaltime)
+    return finaltime
 
 def fetchDataAndAnounce():
     "Fetches latest PM10 data from Munich and twitters if ov threshold"    
@@ -99,15 +112,26 @@ def fetchDataAndAnounce():
     #fetchDataUrls(mainurl)
     
     dataMap = fetchData(cvsMunichFiles)
+    #print dataMap["Johanneskirchen"]
+    #print dataMap["Johanneskirchen"]
+
     #getLatestData(dataMap["Johanneskirchen"])
-    for key in dataMap:    
+    measures = []
+    for key in dataMap:
+        print key    
         latestData = getLatestData(dataMap[key])
-        
-        if (int(latestData) >= pm10Threashhold):
-            twitterValue(key, latestData)
-        
+        measures.append(latestData[2])
+        if (int(latestData[2]) >= pm10Threashhold):
+            twitterValue(key, latestData[2])
+    
+    saveData(measures, makeThingSpeakTimestamp(latestData[0], latestData[1]))    
+    print measures
     return
     
-# Start
-fetchDataAndAnounce()
+def aws_handler(event, context):
+    fetchDataAndAnounce()
+
+if __name__ == "__main__":
+    # Start
+    fetchDataAndAnounce()
     
