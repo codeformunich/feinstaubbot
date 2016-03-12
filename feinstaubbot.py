@@ -82,9 +82,9 @@ def twitterValue( name, value ):
     
     return
     
-def saveData(values, timeStamp):
+def saveData(fieldname, value, timeStamp):
     "Sends values to Thingspeak"
-    params = urllib.urlencode({'field1': values[1], 'field2': values[2], 'field3': values[3],'field4':values[0], 'key':config.THINGSPEAKKEY, 'created_at': timeStamp})
+    params = urllib.urlencode({fieldname: value, 'key':config.THINGSPEAKKEY, 'created_at': timeStamp})
     headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
     conn = httplib.HTTPConnection("api.thingspeak.com:80")
     try:
@@ -114,18 +114,17 @@ def fetchDataAndAnounce():
     dataMap = fetchData(cvsMunichFiles)
     #print dataMap["Johanneskirchen"]
     #print dataMap["Johanneskirchen"]
-
+    thingSpeakfields = {"Johanneskirchen":"field1","Landshuter Allee":"field2", "Lothstraße": "field3","Stachus":"field4"}
     #getLatestData(dataMap["Johanneskirchen"])
-    measures = []
     for key in dataMap:
         print key    
         latestData = getLatestData(dataMap[key])
-        measures.append(latestData[2])
+        saveData(thingSpeakfields[key], latestData[2], makeThingSpeakTimestamp(latestData[0], latestData[1]))
         if (int(latestData[2]) >= pm10Threashhold):
-            twitterValue(key, latestData[2])
-    
-    saveData(measures, makeThingSpeakTimestamp(latestData[0], latestData[1]))    
-    print measures
+            try:
+                twitterValue(key, latestData[2])    
+            except:
+                print "Twitter error"
     return
     
 def aws_handler(event, context):
