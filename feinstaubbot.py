@@ -82,15 +82,15 @@ def twitterValue( name, value ):
     
     return
     
-def saveData(fieldname, value, timeStamp):
+def saveData(fieldnames, values, timeStamp):
     "Sends values to Thingspeak"
-    params = urllib.urlencode({fieldname: value, 'key':config.THINGSPEAKKEY, 'created_at': timeStamp})
+    params = urllib.urlencode({fieldnames[0]: values[0],fieldnames[1]: values[1],fieldnames[2]: values[2],fieldnames[3]: values[3], 'key':config.THINGSPEAKKEY, 'created_at': timeStamp})
     headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
     conn = httplib.HTTPConnection("api.thingspeak.com:80")
     try:
 	    conn.request("POST", "/update", params, headers)
 	    response = conn.getresponse()
-	    print response.status, response.reason
+	    #print response.status, response.reason
 	    data = response.read()
 	    conn.close()
     except:
@@ -114,17 +114,24 @@ def fetchDataAndAnounce():
     dataMap = fetchData(cvsMunichFiles)
     #print dataMap["Johanneskirchen"]
     #print dataMap["Johanneskirchen"]
+    measures = []
+    TSlabels = []
     thingSpeakfields = {"Johanneskirchen":"field1","Landshuter Allee":"field2", "Lothstraße": "field3","Stachus":"field4"}
     #getLatestData(dataMap["Johanneskirchen"])
+    print dataMap
     for key in dataMap:
         print key    
         latestData = getLatestData(dataMap[key])
-        saveData(thingSpeakfields[key], latestData[2], makeThingSpeakTimestamp(latestData[0], latestData[1]))
+        measures.append(latestData[2])
+        TSlabels.append(thingSpeakfields[key])
         if (int(latestData[2]) >= pm10Threashhold):
             try:
                 twitterValue(key, latestData[2])    
             except:
                 print "Twitter error"
+    print measures
+    print TSlabels
+    saveData(TSlabels, measures, makeThingSpeakTimestamp(latestData[0], latestData[1]))
     return
     
 def aws_handler(event, context):
