@@ -77,7 +77,7 @@ def twitterValue( name, value ):
     now = DT.datetime.now()
     twitter = Twython(config.APP_KEY, config.APP_SECRET, config.OAUTH_TOKEN, config.OAUTH_TOKEN_SECRET)
 
-    twitter.update_status(status= now.strftime("%Y-%m-%d %H:%M") + " - Feinstaubalarm in München! Der PM10 Wert bei Messstation " + name + " liegt bei: " + value + "ug/m^3")
+    twitter.update_status(status= now.strftime("%Y-%m-%d %H:%M") + " - #Feinstaub-Alarm in #München! PM10 bei Messstation " + name + " = " + value + "ug/m^3")
     
     
     return
