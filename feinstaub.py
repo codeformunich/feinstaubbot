@@ -9,6 +9,16 @@ stations = [{"name": "Lothstraße", "url": "http://aqicn.org/city/germany/bayern
 {"name": "Landshuter Allee", "url": "http://aqicn.org/city/germany/bayern/munchen/landshuter-allee/"}
 ]
 
-for station in stations:
-    data = html.parse(station['url'])
-    print data.xpath("//td[@id='cur_pm10']/text()")[0]
+stationnr = 0
+
+while stationnr < len(stations):
+    #try:
+       data = html.parse(stations[stationnr]['url'])
+       print 'Trying to read ' + stations[stationnr]['url']
+       stations[stationnr]['value'] = str(data.xpath("//td[@id='cur_pm10']/text()"))
+       mystr = stations[stationnr]['value'] 
+       print mystr.strip("[").strip("]")
+       print stations[stationnr]['name'] + ': ' + str(stations[stationnr]['value'])
+       stationnr += 1     
+    #except:
+    #   print "Try again"
